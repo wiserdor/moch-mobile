@@ -124,25 +124,29 @@ class LotteryChecker {
             if (!history.containsKey(item['id'])) {
               history[item['id']] = [historyItem];
             } else {
-              var lastItem = history[item['id']].last;
+              var lastItem = history[item['id']]!.last;
               if (lastItem['order'] != item['order'] ||
                   lastItem['resident_order'] != item['resident_order']) {
-                history[item['id']].add(historyItem);
+                history[item['id']]!.add(historyItem);
 
-                var notificationMessage =
-                    "התקדמתם במיקום עבור הגרלה מספר ${item["id"]}\nבעיר ${item["city"]} שנערכה בתאריך ${item["lottery_date"].toString().split("T")[0].split('-').reversed.join('-')}\n";
-                notificationMessage +=
-                    'ממקום ${lastItem['order']} למקום ${item['order']}\n';
-
-                if (lastItem['resident_order'] != item['resident_order'] &&
-                    item['resident_order'] > 0) {
+                try {
+                  var notificationMessage =
+                      "התקדמתם במיקום עבור הגרלה מספר ${item["id"]}\nבעיר ${item["city"]} שנערכה בתאריך ${item["lottery_date"].toString().split("T")[0].split('-').reversed.join('-')}\n";
                   notificationMessage +=
-                      'מיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.';
+                      'ממקום ${lastItem['order']} למקום ${item['order']}\n';
+
+                  if (lastItem['resident_order'] != item['resident_order'] &&
+                      item['resident_order'] > 0) {
+                    notificationMessage +=
+                        'מיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.';
+                  }
+                  await SharedPreferencesUtil.saveNotification(MochNotification(
+                    message: notificationMessage,
+                    timestamp: DateTime.now(),
+                  ));
+                } catch (e) {
+                  print(e);
                 }
-                await SharedPreferencesUtil.saveNotification(MochNotification(
-                  message: notificationMessage,
-                  timestamp: DateTime.now(),
-                ));
               }
             }
           }
