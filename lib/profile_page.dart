@@ -10,9 +10,14 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
         child: TextButton(
-            child: Text('התנתק'),
+            style: ButtonStyle(
+                padding: MaterialStateProperty.all(
+                    const EdgeInsets.symmetric(horizontal: 48, vertical: 24)),
+                backgroundColor: MaterialStateProperty.all(Colors.cyan),
+                foregroundColor: MaterialStateProperty.all(Colors.white)),
+            child: const Text('התנתק'),
             onPressed: () async => {
-                  await SharedPreferencesUtil.clear(),
+                  await SharedPreferencesUtil.clearLoginData(),
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(builder: (context) => LoginPage()),

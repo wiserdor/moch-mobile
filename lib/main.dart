@@ -2,20 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:moch_mobile/lottery_checker.dart';
 import 'package:moch_mobile/profile_page.dart';
 import 'package:moch_mobile/shared_preferences_util.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login_page.dart';
 import 'lottery_page.dart';
+import 'models/moch_notification.dart';
 import 'notifications_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // SharedPreferences preferences = await SharedPreferences.getInstance();
-  // await preferences.clear();
   // var item = {
   //   "id": 1,
   //   "city": "ירושלים",
-  //   "order": 1,
-  //   "resident_order": 1,
+  //   "order": 2,
+  //   "resident_order": 2,
   //   "lottery_date": "2021-10-01T00:00:00"
   // };
   // var lastItem = {
@@ -26,10 +27,18 @@ void main() async {
   //   "lottery_date": "2021-10-01T00:00:00"
   // };
   // // await SharedPreferencesUtil.clear();
+  // var notificationMessage =
+  //     "התקדמתם במיקום עבור הגרלה מספר ${item["id"]}\nבעיר ${item["city"]} שנערכה בתאריך ${item["lottery_date"].toString().split("T")[0].split('-').reversed.join('-')}\n";
+  // notificationMessage +=
+  //     'מיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.\n';
+
+  // if (lastItem['resident_order'] != item['resident_order']) {
+  //   notificationMessage +=
+  //       'מיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.';
+  // }
 
   // await SharedPreferencesUtil.saveNotification(MochNotification(
-  //   message:
-  //       'התקדמתם במיקום עבור הגרלה מספר ${item["id"]}\nבעיר ${item["city"]} שנערכה בתאריך ${item["lottery_date"].toString().split("T")[0].split('-').reversed.join('-')}\nממיקום ${lastItem["order"]} ל ${item["order"]}.\nמיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.',
+  //   message: notificationMessage,
   //   timestamp: DateTime.now(),
   // ));
 
@@ -39,7 +48,7 @@ void main() async {
     var lotteryChecker = LotteryChecker();
     await lotteryChecker.checkLottery();
   }
-  runApp(MaterialApp(home: isLoggedIn ? const MyApp() : LoginPage()));
+  runApp(MaterialApp(home: isLoggedIn ? const MyApp() : const LoginPage()));
 }
 
 class MyApp extends StatelessWidget {
@@ -111,6 +120,12 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
       case AppLifecycleState.resumed:
         var isLoggedIn = await SharedPreferencesUtil.isLoggedIn();
         if (isLoggedIn) {
+          // alert dialog
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('מעדכן...'), duration: Duration(seconds: 1)),
+          );
+
           await lotteryChecker.checkLottery();
         }
         break;

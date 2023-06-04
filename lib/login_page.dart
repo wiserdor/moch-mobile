@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,6 +23,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool error = false;
   bool isLoading = false;
+  var errMsg = '';
 
   @override
   Widget build(BuildContext context) {
@@ -104,9 +107,10 @@ class _LoginPageState extends State<LoginPage> {
               ),
               // if error should show error message
               if (error)
-                const Text(
-                  'תעודת זהות או סיסמא שגויים',
+                Text(
+                  errMsg,
                   style: TextStyle(color: Colors.red),
+                  textAlign: TextAlign.center,
                 ),
               const SizedBox(height: 48),
               Directionality(
@@ -133,15 +137,41 @@ class _LoginPageState extends State<LoginPage> {
       isLoading = true;
     });
 
-    var ok = await lotteryChecker.checkLottery(
-        userId: _idController.text,
-        userPartnerId: _partnerIdController.text,
-        userPassword: _passwordController.text);
-    if (!ok) {
-      setState(() {
-        error = true;
-        isLoading = false;
-      });
+    // try login 3 times if login succeed but get data not
+    LoginStatusType ok = LoginStatusType.loginFailed;
+    for (int i = 0; i < 3; i++) {
+      ok = await lotteryChecker.checkLottery(
+          userId: _idController.text,
+          userPartnerId: _partnerIdController.text,
+          userPassword: _passwordController.text);
+
+      if (ok == LoginStatusType.loginSuccess ||
+          ok == LoginStatusType.loginFailed) {
+        break;
+      }
+
+      // timeout between tries
+      await Future.delayed(const Duration(seconds: 2));
+    }
+
+    if (ok != LoginStatusType.loginSuccess) {
+      if (ok == LoginStatusType.getDataFailed) {
+        setState(() {
+          error = true;
+          errMsg =
+              "החיבור בוצע אך לא הצלחנו לקבל נתונים מהשרת, אנא נסה שוב מאוחר יותר";
+          isLoading = false;
+        });
+      }
+
+      if (ok == LoginStatusType.loginFailed) {
+        setState(() {
+          error = true;
+          errMsg = "תעודת זהות או סיסמא שגויים";
+          isLoading = false;
+        });
+      }
+
       return;
     }
 

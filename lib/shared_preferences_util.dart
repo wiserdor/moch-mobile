@@ -68,4 +68,11 @@ class SharedPreferencesUtil {
     final SharedPreferences prefs = await _prefs;
     await prefs.clear();
   }
+
+  static clearLoginData() async {
+    final SharedPreferences prefs = await _prefs;
+    await prefs.remove('userId');
+    await prefs.remove('userPartnerId');
+    await prefs.remove('userPassword');
+  }
 }

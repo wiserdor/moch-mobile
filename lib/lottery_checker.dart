@@ -1,20 +1,23 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:mutex/mutex.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'models/moch_notification.dart';
 import 'shared_preferences_util.dart';
 
+enum LoginStatusType {
+  loginSuccess,
+  loginFailed,
+  getDataFailed,
+}
+
 class LotteryChecker {
   final loginUrl = 'https://www.dira.moch.gov.il/api/users/Login';
+  final locker = Mutex();
 
   var loginData = <String, dynamic>{};
-  var history = <String, dynamic>{};
-
-  Future<void> main() async {
-    history = await loadHistory();
-  }
 
   Future<Map<String, dynamic>> getLoginData() async {
     var idNumber = await SharedPreferencesUtil.userId;
@@ -45,14 +48,14 @@ class LotteryChecker {
     return json.decode(prefs.getString('history') ?? '{}');
   }
 
-  Future<void> saveHistory() async {
+  Future<void> saveHistory(Map<String, dynamic> history) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('history', json.encode(history));
   }
 
-  Future<bool> checkLottery(
+  Future<LoginStatusType> checkLottery(
       {String? userId, String? userPassword, String? userPartnerId}) async {
-    var loginData;
+    Map<String, dynamic> loginData;
     if (userId == null || userPassword == null) {
       loginData = await getLoginData();
     } else {
@@ -63,10 +66,12 @@ class LotteryChecker {
     }
     var dataUrl =
         await getDataUrl(userPartnerId: userPartnerId, userId: userId);
+    var history = await loadHistory();
 
     var session = http.Client();
 
     try {
+      locker.acquire();
       var response = await session.post(Uri.parse(loginUrl),
           headers: {
             'Content-Type': 'application/json',
@@ -75,12 +80,16 @@ class LotteryChecker {
           body: jsonEncode(loginData));
 
       if (response.statusCode == 200) {
+        var actionStatus = json.decode(response.body)['ActionStatus'];
+        if (actionStatus != 1) {
+          return LoginStatusType.loginFailed;
+        }
+
         var sessionId = response.headers['sessionid'];
         var cookie = response.headers['set-cookie'];
 
         if (sessionId == null || cookie == null) {
-          print('Login failed, session id or cookie is null');
-          return false;
+          return LoginStatusType.loginFailed;
         }
 
         response = await session.get(Uri.parse(dataUrl), headers: {
@@ -118,33 +127,41 @@ class LotteryChecker {
               var lastItem = history[item['id']].last;
               if (lastItem['order'] != item['order'] ||
                   lastItem['resident_order'] != item['resident_order']) {
-                print('Order changed for lottery id ${item['id']}.');
-                print('Previous data: $lastItem');
-                print('Current data: $item');
                 history[item['id']].add(historyItem);
+
+                var notificationMessage =
+                    "התקדמתם במיקום עבור הגרלה מספר ${item["id"]}\nבעיר ${item["city"]} שנערכה בתאריך ${item["lottery_date"].toString().split("T")[0].split('-').reversed.join('-')}\n";
+                notificationMessage +=
+                    'ממקום ${lastItem['order']} למקום ${item['order']}\n';
+
+                if (lastItem['resident_order'] != item['resident_order'] &&
+                    item['resident_order'] > 0) {
+                  notificationMessage +=
+                      'מיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.';
+                }
                 await SharedPreferencesUtil.saveNotification(MochNotification(
-                  message:
-                      'התקדמתם במיקום עבור הגרלה מספר ${item["id"]}\nבעיר ${item["city"]} שנערכה בתאריך ${item["lottery_date"].toString().split("T")[0].split('-').reversed.join('-')}\nממיקום ${lastItem["order"]} ל ${item["order"]}.\nמיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.',
+                  message: notificationMessage,
                   timestamp: DateTime.now(),
                 ));
               }
             }
           }
 
-          await saveHistory();
+          await saveHistory(history);
         } else {
           print('Failed to get data, status code: ${response.statusCode}');
-          return false;
+          return LoginStatusType.getDataFailed;
         }
       } else {
         print('Login failed, status code: ${response.statusCode}');
-        return false;
+        return LoginStatusType.loginFailed;
       }
     } catch (e) {
-      return false;
+      return LoginStatusType.getDataFailed;
     } finally {
+      locker.release();
       session.close();
     }
-    return true;
+    return LoginStatusType.loginSuccess;
   }
 }
