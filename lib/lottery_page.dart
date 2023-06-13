@@ -20,7 +20,11 @@ class _LotteryPageState extends State<LotteryPage> {
     var history = await lotteryChecker.loadHistory();
     lotteryList = history.values.map((e) => e.last).toList();
     //sort by order
-    lotteryList?.sort((a, b) => a[sortParameter].compareTo(b[sortParameter]));
+    if (sortParameter == 'timestamp') {
+      lotteryList?.sort((a, b) => b[sortParameter].compareTo(a[sortParameter]));
+    } else {
+      lotteryList?.sort((a, b) => a[sortParameter].compareTo(b[sortParameter]));
+    }
     // remove order less than 1
     lotteryList?.removeWhere((element) => element[sortParameter] < 1);
     setState(() {}); // trigger UI update

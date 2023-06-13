@@ -3,8 +3,27 @@ import 'package:moch_mobile/models/moch_notification.dart';
 
 import 'shared_preferences_util.dart';
 
-class NotificationsPage extends StatelessWidget {
+class NotificationsPage extends StatefulWidget {
   const NotificationsPage({super.key});
+
+  @override
+  _NotificationsPageState createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends State<NotificationsPage> {
+  late Future<List<MochNotification>> _notificationsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _notificationsFuture = SharedPreferencesUtil.getNotifications();
+  }
+
+  @override
+  void dispose() {
+    SharedPreferencesUtil.markAllAsSeen();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +50,19 @@ class NotificationsPage extends StatelessWidget {
                       ),
                       subtitle: Text(
                           '${snapshot.data![index].timestamp.toString().substring(10, 16)} ${snapshot.data![index].timestamp.toString().substring(0, 10).split('-').reversed.join('-')}'),
+                      trailing: snapshot.data![index].seen
+                          ? null
+                          : Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Container(
+                                width: 10,
+                                height: 10,
+                                decoration: const BoxDecoration(
+                                  color: Colors.red,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                            ),
                       minVerticalPadding: 20,
                       shape:
                           const Border(bottom: BorderSide(color: Colors.grey)),

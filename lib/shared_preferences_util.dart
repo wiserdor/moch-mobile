@@ -31,11 +31,26 @@ class SharedPreferencesUtil {
             return MochNotification(
               message: notificationData['message'],
               timestamp: DateTime.parse(notificationData['timestamp']),
+              seen: notificationData['seen'] ?? false,
             );
           })
           .toList()
           .reversed
           .toList();
+    }
+  }
+
+  static Future<void> markAllAsSeen() async {
+    final SharedPreferences prefs = await _prefs;
+    List<String>? encodedNotifications = prefs.getStringList('notifications');
+    if (encodedNotifications != null) {
+      var updatedNotifications =
+          encodedNotifications.map((encodedNotification) {
+        Map<String, dynamic> notificationData = jsonDecode(encodedNotification);
+        notificationData['seen'] = true;
+        return jsonEncode(notificationData);
+      }).toList();
+      await prefs.setStringList('notifications', updatedNotifications);
     }
   }
 
