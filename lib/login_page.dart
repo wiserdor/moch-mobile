@@ -44,8 +44,24 @@ class _LoginPageState extends State<LoginPage> {
                     style: const TextStyle(
                       fontSize: 18,
                     ),
-                    decoration: const InputDecoration(
-                      labelText: 'תעודת זהות שלך',
+                    decoration: InputDecoration(
+                      labelText: 'תעודת זהות',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 24),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: Colors.cyan, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: Colors.grey, width: 1),
+                      ),
                     ),
                     validator: (value) {
                       if (value!.isEmpty) {
@@ -53,7 +69,7 @@ class _LoginPageState extends State<LoginPage> {
                       }
                       // should be only numbers
                       if (int.tryParse(value) == null) {
-                        return 'תעודת זהות צריכה להיות מספרית';
+                        return 'תעודת הזהות צריכה להיות מספר';
                       }
 
                       return null;
@@ -65,8 +81,24 @@ class _LoginPageState extends State<LoginPage> {
                     controller: _passwordController,
                     textDirection: TextDirection.ltr,
                     textAlign: TextAlign.center,
-                    decoration: const InputDecoration(
-                      labelText: 'סיסמא',
+                    decoration: InputDecoration(
+                      labelText: 'תעודת זהות',
+                      hintStyle: const TextStyle(color: Colors.grey),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 16, horizontal: 24),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: Colors.cyan, width: 2),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide:
+                            const BorderSide(color: Colors.grey, width: 1),
+                      ),
                     ),
                     obscureText: true,
                     style: const TextStyle(
