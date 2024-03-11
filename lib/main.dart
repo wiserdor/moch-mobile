@@ -2,53 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:moch_mobile/lottery_checker.dart';
 import 'package:moch_mobile/profile_page.dart';
 import 'package:moch_mobile/shared_preferences_util.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'login_page.dart';
 import 'lottery_page.dart';
-import 'models/moch_notification.dart';
 import 'notifications_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // SharedPreferences preferences = await SharedPreferences.getInstance();
-  // var item = {
-  //   "id": 1,
-  //   "city": "ירושלים",
-  //   "order": 2,
-  //   "resident_order": 2,
-  //   "lottery_date": "2021-10-01T00:00:00"
-  // };
-  // var lastItem = {
-  //   "id": 1,
-  //   "city": "ירושלים",
-  //   "order": 1,
-  //   "resident_order": 1,
-  //   "lottery_date": "2021-10-01T00:00:00"
-  // };
-  // // await SharedPreferencesUtil.clear();
-  // var notificationMessage =
-  //     "התקדמתם במיקום עבור הגרלה מספר ${item["id"]}\nבעיר ${item["city"]} שנערכה בתאריך ${item["lottery_date"].toString().split("T")[0].split('-').reversed.join('-')}\n";
-  // notificationMessage +=
-  //     'מיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.\n';
-
-  // if (lastItem['resident_order'] != item['resident_order']) {
-  //   notificationMessage +=
-  //       'מיקום בתור תושב העיר ${lastItem["resident_order"]} ל ${item["resident_order"]}.';
-  // }
-
-  // await SharedPreferencesUtil.saveNotification(MochNotification(
-  //   message: notificationMessage,
-  //   timestamp: DateTime.now(),
-  // ));
 
   var isLoggedIn = await SharedPreferencesUtil.isLoggedIn();
+  runApp(MaterialApp(home: isLoggedIn ? const MyApp() : const LoginPage()));
 
   if (isLoggedIn) {
     var lotteryChecker = LotteryChecker();
     await lotteryChecker.checkLottery();
   }
-  runApp(MaterialApp(home: isLoggedIn ? const MyApp() : const LoginPage()));
 }
 
 class MyApp extends StatelessWidget {
@@ -59,16 +27,26 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'מחיר למשתכן',
       theme: ThemeData(
-        primarySwatch: Colors.cyan,
-        brightness: Brightness.light,
+        primarySwatch: Colors.green,
+        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
         appBarTheme: const AppBarTheme(
-          color: Colors.white,
+          backgroundColor: Colors.white,
           elevation: 0.0,
-          iconTheme: IconThemeData(color: Colors.black87),
+          iconTheme: IconThemeData(color: Color(0xFF333333)),
+          titleTextStyle: TextStyle(
+            color: Color(0xFF333333),
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         textTheme: const TextTheme(
-          bodyLarge: TextStyle(color: Colors.black87),
-          bodyMedium: TextStyle(color: Colors.black54),
+          bodyLarge: TextStyle(color: Color(0xFF333333)),
+          bodyMedium: TextStyle(color: Color(0xFF666666)),
+        ),
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: Colors.white,
+          selectedItemColor: Color(0xFFF60F9F),
+          unselectedItemColor: Color(0xFF666666),
         ),
       ),
       home: const MyHomePage(),
@@ -98,80 +76,90 @@ class _MyHomePageState extends State<MyHomePage> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-
-    // Add the observer.
     WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
-    // Remove the observer
     WidgetsBinding.instance.removeObserver(this);
-
     super.dispose();
+  }
+
+  Future<void> _updateLotteryData() async {
+    var lotteryChecker = LotteryChecker();
+    await lotteryChecker.checkLottery();
+
+    // Load the updated lottery history
+    var history = await lotteryChecker.loadHistory();
+
+    // Update the UI with the latest lottery data
+    setState(() {
+      // Update the relevant UI widgets with the loaded history
+      // For example:
+      // _lotteryHistory = history;
+      // _lotteryDataList = history.values.toList();
+    });
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
     super.didChangeAppLifecycleState(state);
 
-    // These are the callbacks
-    switch (state) {
-      case AppLifecycleState.resumed:
-        var isLoggedIn = await SharedPreferencesUtil.isLoggedIn();
-        if (isLoggedIn) {
-          // alert dialog
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('מעדכן...'), duration: Duration(seconds: 1)),
-          );
-
-          await lotteryChecker.checkLottery();
-        }
-        break;
-      case AppLifecycleState.inactive:
-        // widget is inactive
-        break;
-      case AppLifecycleState.paused:
-        // widget is paused
-        break;
-      case AppLifecycleState.detached:
-        // widget is detached
-        break;
+    if (state == AppLifecycleState.resumed) {
+      var isLoggedIn = await SharedPreferencesUtil.isLoggedIn();
+      if (isLoggedIn) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('מעדכן...'),
+            duration: Duration(seconds: 1),
+          ),
+        );
+        _updateLotteryData();
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'ההגרלות שלי',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'התראות',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'פרופיל',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.blue,
-        onTap: _onItemTapped,
-      ),
       body: PageView(
         controller: _pageController,
-        physics:
-            const NeverScrollableScrollPhysics(), // if you don't want the user to swipe between pages
+        physics: const NeverScrollableScrollPhysics(),
         children: const <Widget>[
           LotteryPage(),
           NotificationsPage(),
           ProfilePage(),
         ],
+      ),
+      bottomNavigationBar: BottomAppBar(
+        color: Colors.white,
+        shape: const CircularNotchedRectangle(),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.list),
+              color: _selectedIndex == 0
+                  ? const Color(0xFF99C2A2)
+                  : const Color(0xFF666666),
+              onPressed: () => _onItemTapped(0),
+            ),
+            IconButton(
+              icon: const Icon(Icons.notifications),
+              color: _selectedIndex == 1
+                  ? const Color(0xFF99C2A2)
+                  : const Color(0xFF666666),
+              onPressed: () => _onItemTapped(1),
+            ),
+            IconButton(
+              icon: const Icon(Icons.person),
+              color: _selectedIndex == 2
+                  ? const Color(0xFF99C2A2)
+                  : const Color(0xFF666666),
+              onPressed: () => _onItemTapped(2),
+            ),
+          ],
+        ),
       ),
     );
   }

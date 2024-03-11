@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'lottery_builder.dart';
+import 'lottery_details.dart';
 import 'lottery_checker.dart';
 
 class LotteryPage extends StatefulWidget {
@@ -15,8 +15,13 @@ class _LotteryPageState extends State<LotteryPage> {
   List<dynamic>? lotteryList;
 
   String dropdownValue = 'order';
+  bool isLoading = false;
 
   Future<void> _loadHistory({sortParameter = 'order'}) async {
+    setState(() {
+      isLoading = true;
+    });
+
     var history = await lotteryChecker.loadHistory();
     lotteryList = history.values.map((e) => e.last).toList();
     //sort by order
@@ -27,7 +32,10 @@ class _LotteryPageState extends State<LotteryPage> {
     }
     // remove order less than 1
     lotteryList?.removeWhere((element) => element[sortParameter] < 1);
-    setState(() {}); // trigger UI update
+
+    setState(() {
+      isLoading = false;
+    });
   }
 
   void _sort(String? sortParameter) {
@@ -45,51 +53,91 @@ class _LotteryPageState extends State<LotteryPage> {
     _loadHistory();
   }
 
+  void _showSortOptions() {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            textDirection: TextDirection.rtl,
+            children: <Widget>[
+              ListTile(
+                title: const Center(child: Text('עדכון אחרון')),
+                onTap: () {
+                  _sort('timestamp');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Center(child: Text('מיקום זכיה')),
+                onTap: () {
+                  _sort('order');
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                title: const Center(child: Text('מיקום זכיה תושב העיר')),
+                onTap: () {
+                  _sort('resident_order');
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Column(children: [
-      Expanded(
-          child: lotteryList == null || lotteryList!.isEmpty
-              ? const Center(child: CircularProgressIndicator())
-              : ListView.builder(
-                  itemCount: lotteryList!.length,
-                  itemBuilder: (BuildContext context, int index) {
-                    // last data by id
-                    var data = lotteryList?[index];
-                    // if null return empty container
-                    if (data == null) return const SizedBox.shrink();
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: Column(
+        children: [
+          Expanded(
+            child: Stack(
+              children: [
+                if (lotteryList != null && lotteryList!.isNotEmpty)
+                  ListView.builder(
+                    itemCount: lotteryList!.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      var data = lotteryList?[index];
+                      if (data == null) return const SizedBox.shrink();
 
-                    return LotteryDetails(data: data);
-                  },
-                )),
-      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-        DropdownButton<String>(
-          value: dropdownValue,
-          icon: const Icon(Icons.arrow_downward),
-          iconSize: 24,
-          elevation: 16,
-          style: const TextStyle(color: Colors.deepPurple),
-          alignment: Alignment.center,
-          underline: Container(
-            height: 2,
-            color: Colors.deepPurpleAccent,
+                      return LotteryDetails(data: data);
+                    },
+                  ),
+                if (isLoading)
+                  Container(
+                    color: Colors.black54,
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
-          onChanged: _sort,
-          items: <Map<String, String>>[
-            {'value': 'timestamp', 'label': 'עדכון אחרון'},
-            {'value': 'order', 'label': 'מיקום זכיה'},
-            {'value': 'resident_order', 'label': 'מיקום זכיה תושב העיר'}
-          ].map<DropdownMenuItem<String>>((Map<String, String> value) {
-            return DropdownMenuItem<String>(
-              value: value['value'],
-              alignment: Alignment.centerRight,
-              child: Text(value['label']!, textDirection: TextDirection.rtl),
-            );
-          }).toList(),
+        ],
+      ),
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.only(left: 40, top: 32),
+        child: Align(
+          alignment: Alignment.topLeft,
+          child: FloatingActionButton(
+            onPressed: isLoading ? null : _showSortOptions,
+            tooltip: 'מיון לפי',
+            backgroundColor: Color(0xff99C2A2),
+            child: const Icon(
+              Icons.sort,
+            ),
+          ),
         ),
-        const SizedBox(width: 24),
-        Text('מיין לפי:', textDirection: TextDirection.rtl),
-      ])
-    ]);
+      ),
+    );
   }
 }

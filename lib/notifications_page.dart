@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:moch_mobile/models/moch_notification.dart';
 
 import 'shared_preferences_util.dart';
@@ -25,61 +26,94 @@ class _NotificationsPageState extends State<NotificationsPage> {
     super.dispose();
   }
 
+  String _formatTimestamp(DateTime timestamp) {
+    return intl.DateFormat('dd/MM/yyyy HH:mm').format(timestamp);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<MochNotification>>(
-      future: SharedPreferencesUtil.getNotifications(),
-      builder: (BuildContext context,
-          AsyncSnapshot<List<MochNotification>> snapshot) {
-        if (snapshot.hasData) {
-          if (snapshot.data!.isEmpty) {
-            // If there are no notifications, show a message.
-            return const Center(
-              child: Text('.אין התראות חדשות'),
-            );
-          } else {
-            // If there are notifications, build a list.
-            return ListView.builder(
-              itemCount: snapshot.data!.length,
-              itemBuilder: (BuildContext context, int index) {
-                return Directionality(
-                    textDirection: TextDirection.rtl,
+    return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
+      body: FutureBuilder<List<MochNotification>>(
+        future: _notificationsFuture,
+        builder: (BuildContext context,
+            AsyncSnapshot<List<MochNotification>> snapshot) {
+          if (snapshot.hasData) {
+            if (snapshot.data!.isEmpty) {
+              return const Center(
+                child: Text(
+                  'אין התראות חדשות.',
+                  style: TextStyle(
+                    color: Color(0xFF666666),
+                    fontSize: 18,
+                  ),
+                  textDirection: TextDirection.rtl,
+                ),
+              );
+            } else {
+              return ListView.builder(
+                itemCount: snapshot.data!.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     child: ListTile(
+                      contentPadding: const EdgeInsets.all(16),
                       title: Text(
                         snapshot.data![index].message,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF333333),
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textDirection: TextDirection.rtl,
                       ),
-                      subtitle: Text(
-                          '${snapshot.data![index].timestamp.toString().substring(10, 16)} ${snapshot.data![index].timestamp.toString().substring(0, 10).split('-').reversed.join('-')}'),
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Text(
+                          _formatTimestamp(snapshot.data![index].timestamp),
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF666666),
+                          ),
+                          textDirection: TextDirection.rtl,
+                        ),
+                      ),
                       trailing: snapshot.data![index].seen
                           ? null
-                          : Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                width: 10,
-                                height: 10,
-                                decoration: const BoxDecoration(
-                                  color: Colors.red,
-                                  shape: BoxShape.circle,
-                                ),
-                              ),
+                          : const Icon(
+                              Icons.circle,
+                              color: Color(0xFF4CAF50),
+                              size: 12,
                             ),
-                      minVerticalPadding: 20,
-                      shape:
-                          const Border(bottom: BorderSide(color: Colors.grey)),
-                    ));
-              },
+                    ),
+                  );
+                },
+              );
+            }
+          } else if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                'Error: ${snapshot.error}',
+                style: const TextStyle(
+                  color: Color(0xFF333333),
+                  fontSize: 16,
+                ),
+                textDirection: TextDirection.rtl,
+              ),
+            );
+          } else {
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+              ),
             );
           }
-        } else if (snapshot.hasError) {
-          // If there's an error, show the error message.
-          return Center(
-            child: Text('Error: ${snapshot.error}'),
-          );
-        } else {
-          // While waiting for the future to complete, show a loading spinner.
-          return const Center(child: CircularProgressIndicator());
-        }
-      },
+        },
+      ),
     );
   }
 }

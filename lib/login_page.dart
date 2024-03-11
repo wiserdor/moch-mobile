@@ -28,6 +28,7 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5), // Background Color
       body: Form(
         key: _formKey,
         child: Padding(
@@ -36,17 +37,28 @@ class _LoginPageState extends State<LoginPage> {
             mainAxisAlignment: MainAxisAlignment.center,
             textDirection: TextDirection.rtl,
             children: <Widget>[
+              // Add the logo
+              Image.asset(
+                'assets/logo.png', // Replace with your logo file path
+                height: 100,
+                width: 100,
+              ),
+
+              // Add a SizedBox for gap between the logo and the first text input
+              const SizedBox(height: 32),
               Directionality(
                   textDirection: TextDirection.rtl,
                   child: TextFormField(
                     controller: _idController,
+                    enabled: !isLoading,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 18,
                     ),
                     decoration: InputDecoration(
                       labelText: 'תעודת זהות',
-                      hintStyle: const TextStyle(color: Colors.grey),
+                      hintStyle: const TextStyle(
+                          color: Color(0xFF333333)), // Text Color
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 16, horizontal: 24),
                       border: OutlineInputBorder(
@@ -54,8 +66,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide:
-                            const BorderSide(color: Colors.cyan, width: 2),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF4CAF50),
+                            width: 2), // Primary Color
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -75,15 +88,18 @@ class _LoginPageState extends State<LoginPage> {
                       return null;
                     },
                   )),
+              const SizedBox(height: 16),
               Directionality(
                   textDirection: TextDirection.rtl,
                   child: TextFormField(
                     controller: _passwordController,
+                    enabled: !isLoading,
                     textDirection: TextDirection.ltr,
                     textAlign: TextAlign.center,
                     decoration: InputDecoration(
-                      labelText: 'תעודת זהות',
-                      hintStyle: const TextStyle(color: Colors.grey),
+                      labelText: 'סיסמא',
+                      hintStyle: const TextStyle(
+                          color: Color(0xFF333333)), // Text Color
                       contentPadding: const EdgeInsets.symmetric(
                           vertical: 16, horizontal: 24),
                       border: OutlineInputBorder(
@@ -91,8 +107,9 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
-                        borderSide:
-                            const BorderSide(color: Colors.cyan, width: 2),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF4CAF50),
+                            width: 2), // Primary Color
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -113,50 +130,41 @@ class _LoginPageState extends State<LoginPage> {
                     },
                   )),
               const SizedBox(height: 24),
-              TextButton(
-                style: ButtonStyle(
-                    padding: MaterialStateProperty.all(
-                        const EdgeInsets.symmetric(
-                            horizontal: 48, vertical: 24)),
-                    backgroundColor: MaterialStateProperty.all(Colors.cyan),
-                    foregroundColor: MaterialStateProperty.all(Colors.white)),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  backgroundColor: const Color(0xFF4CAF50),
+                  foregroundColor: const Color(0xFFFFFFFF),
+                  textStyle: const TextStyle(
+                    fontSize: 18,
+                  ),
+                  minimumSize: const Size(
+                      double.infinity, 0), // Set the width to maximum available
+                ),
                 onPressed: isLoading
                     ? null
                     : () {
-                        // Change this line
                         if (_formKey.currentState!.validate()) {
                           _login();
                         }
                       },
-                child: isLoading // And this line
-                    ? CircularProgressIndicator() // Add this line
-                    : const Text(
-                        'התחבר',
-                        style: TextStyle(
-                          fontSize: 18,
-                        ),
-                      ),
+                child: isLoading
+                    ? const CircularProgressIndicator(
+                        color: Color(0xFFFFFFFF)) // Accent Color
+                    : const Text('התחבר'),
               ),
               // if error should show error message
+              const SizedBox(height: 8),
               if (error)
                 Text(
                   errMsg,
-                  style: TextStyle(color: Colors.red),
+                  style:
+                      const TextStyle(color: Color(0xFFF44336)), // Error Color
                   textAlign: TextAlign.center,
                 ),
-              const SizedBox(height: 48),
-              Directionality(
-                  textDirection: TextDirection.rtl,
-                  child: TextFormField(
-                      controller: _partnerIdController,
-                      textDirection: TextDirection.rtl,
-                      textAlign: TextAlign.center,
-                      decoration: const InputDecoration(
-                        labelText: '(לא חובה) תעודת זהות של בן/בת הזוג',
-                      ),
-                      style: const TextStyle(
-                        fontSize: 18,
-                      ))),
             ],
           ),
         ),
@@ -215,7 +223,7 @@ class _LoginPageState extends State<LoginPage> {
 
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => MyApp()),
+      MaterialPageRoute(builder: (context) => const MyApp()),
     );
   }
 }
